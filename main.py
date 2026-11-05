@@ -44,7 +44,7 @@ async def check_alert_status():
         "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7"
     }
     
-    logging.info("🚀 Моніторинг Нептуна запущено (покращений пошук).")
+    logging.info("🚀 Моніторинг Нептуна запущено (режим дебагу).")
 
     async with ClientSession() as session:
         while True:
@@ -52,25 +52,21 @@ async def check_alert_status():
                 async with session.get(url, headers=headers, timeout=15) as response:
                     if response.status == 200:
                         raw_text = await response.text()
+                        
+                        # Виводимо шматок HTML у логи, щоб побачити, що повертає сайт
+                        logging.info(f"📄 HTML шматок з сайту: {raw_text[:350]}...")
+                        
                         text_lower = raw_text.lower()
-                        
-                        # Шукаємо згадки Ніжина та ознаки тривоги ширше
                         has_nizhyn = "ніжин" in text_lower
+                        has_alarm = "тривога" in text_lower or "небезпека" in text_lower
+                        has_clear = "відбій" in text_lower or "скасовано" in text_lower
                         
-                        # Якщо є слова тривоги або червоний колір/класи на сайті
-                        has_alarm = ("тривога" in text_lower or "небезпека" in text_lower or "alarm" in text_lower or "danger" in text_lower or "red" in text_lower)
-                        has_clear = ("відбій" in text_lower or "скасовано" in text_lower or "спокійно" in text_lower)
-                        
-                        # Якщо на сайті явно вказано Ніжин і при цьому є тривога (або загальна тривога по області/району)
-                        if has_nizhyn and has_alarm and not has_clear:
+                        if has_alarm:
                             current_status = "active"
-                        elif has_clear:
-                            current_status = "clear"
                         else:
-                            # Додаткова перевірка: якщо слово Ніжин є разом із тривогою в межах сайту
-                            current_status = "active" if (has_nizhyn and "тривога" in text_lower) else "clear"
+                            current_status = "clear"
                             
-                        logging.info(f"🔎 Статус з сайту: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
+                        logging.info(f"🔎 Статус району: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
                         
                         if last_alert_status is None:
                             last_alert_status = current_status
