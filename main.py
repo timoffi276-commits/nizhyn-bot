@@ -53,13 +53,13 @@ async def check_alerts_api():
                         data = await response.json()
                         alerts_list = data.get("alerts", [])
                         
-                        # Шукаємо, чи є в активних тривогах Ніжин або Чернігівська область
+                        # Шукаємо саме Ніжин або Чернігівщину в активних тривогах
                         is_alarm = False
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             oblast = alert.get("location_oblast", "").lower()
                             
-                            if "ніжин" in title or "чернігів" in oblast or "чернігів" in title:
+                            if "ніжин" in title or "чернігів" in title or "чернігів" in oblast:
                                 is_alarm = True
                                 break
                         
