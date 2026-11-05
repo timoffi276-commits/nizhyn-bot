@@ -6,14 +6,7 @@ from aiohttp import web, ClientSession
 # --- НАЛАШТУВАННЯ ---
 TELEGRAM_BOT_TOKEN = "8924046656:AAFptNIBxDr-5MA773mF7OAdE2dJkfQEUkE"
 CHANNEL_ID = "@nizhyn_life"
-
-# Токен від alerts.in.ua
 ALERTS_API_TOKEN = "fe2f8043ea50d7fc116cb410bb6478bc858ee08fab2203"
-
-# ID Ніжинського району в системі alerts.in.ua (або загально по області/району)
-# Зазвичай область Чернігівська — це regionId 25 або перевіримо через API району
-# Для прикладу використаємо запит статусу району
-NIHYN_DISTRICT_ID = "25" # Чернігівська область / райони
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,13 +38,13 @@ async def send_telegram_message(session, text):
 async def check_alerts_api():
     global last_alert_status
     
-    # Офіційне API alerts.in.ua для перевірки статусів
-    url = "https://api.alerts.in.ua/v1/iot/active_air_raid_alerts_by_district.json"
+    # Виправляємо URL на офіційний ендпоінт alerts.in.ua
+    url = "https://api.alerts.in.ua/v1/alerts/active.json"
     headers = {
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг через API alerts.in.ua запущено.")
+    logging.info("🚀 Моніторинг через API alerts.in.ua запущено (виправлений URL).")
 
     async with ClientSession() as session:
         while True:
@@ -59,15 +52,10 @@ async def check_alerts_api():
                 async with session.get(url, headers=headers, timeout=15) as response:
                     if response.status == 200:
                         data = await response.json()
-                        
-                        # Шукаємо статус по Ніжину або району у відповіді API
-                        # API alerts.in.ua зазвичай повертає список активних тривог або стан районів
-                        # Перевіримо наявність Ніжина у списку активних
                         text_data = str(data).lower()
                         
-                        # Шукаємо Ніжин в активних тривогах
-                        is_alarm = "ніжин" in text_data and ("active" in text_data or "true" in text_data)
-                        
+                        # Шукаємо Ніжин у відповіді API
+                        is_alarm = "ніжин" in text_data
                         current_status = "active" if is_alarm else "clear"
                             
                         logging.info(f"🔎 Статус від API alerts.in.ua: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
