@@ -43,7 +43,7 @@ async def check_alerts_api():
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Точний моніторинг через API alerts.in.ua запущено.")
+    logging.info("🚀 Моніторинг через API alerts.in.ua запущено (з дебагом списку).")
 
     async with ClientSession() as session:
         while True:
@@ -53,16 +53,19 @@ async def check_alerts_api():
                         data = await response.json()
                         alerts_list = data.get("alerts", [])
                         
-                        # Шукаємо саме Ніжин або Чернігівщину в активних тривогах
                         is_alarm = False
-                        for alert in alerts_list:
-                            title = alert.get("location_title", "").lower()
-                            oblast = alert.get("location_oblast", "").lower()
-                            
-                            if "ніжин" in title or "чернігів" in title or "чернігів" in oblast:
-                                is_alarm = True
-                                break
+                        active_titles = []
                         
+                        for alert in alerts_list:
+                            title = alert.get("location_title", "")
+                            oblast = alert.get("location_oblast", "")
+                            active_titles.append(title)
+                            
+                            # Перевіряємо чітко Ніжин або Чернігівщину
+                            if "ніжин" in title.lower() or "чернігів" in title.lower() or "чернігів" in oblast.lower():
+                                is_alarm = True
+                        
+                        logging.info(f"📋 Активні тривоги зараз: {active_titles}")
                         current_status = "active" if is_alarm else "clear"
                             
                         logging.info(f"🔎 Статус району: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
