@@ -4,7 +4,7 @@ import asyncio
 from aiohttp import web, ClientSession
 
 # --- НАЛАШТУВАННЯ ---
-TELEGRAM_BOT_TOKEN = "8924046656:AAFptNIBxDr-5MA773mF7OAdE2dJkfQEUkE"
+TELEGRAM_BOT_TOKEN = "9239792479:AAHn-MkZJtmlzYrrkRuya5DRkcMtVSFhNH0"
 CHANNEL_ID = "@nizhyn_life"
 ALERTS_API_TOKEN = "fe2f8043ea50d7fc116cb410bb6478bc858ee08fab2203"
 
@@ -46,7 +46,7 @@ async def check_alerts_api():
     logging.info("🚀 Моніторинг Ніжина через API запущено у фоновому режимі.")
 
     async with ClientSession() as session:
-        # Надсилаємо тестове сповіщення одразу при запуску бота, щоб перевірити зв'язок з каналом
+        # Тестове повідомлення при запуску нового бота
         await send_telegram_message(session, "🤖 **Бот моніторингу тривог успішно запущено і працює 24/7!**")
 
         while True:
@@ -113,4 +113,4 @@ def init_app():
 if __name__ == "__main__":
     app = init_app()
     port = int(os.environ.get("PORT", 10000))
-    web.run_app(app, host="0.0.0.0", port=port
+    web.run_app(app, host="0.0.0.0", port=port)
