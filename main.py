@@ -44,7 +44,7 @@ async def check_alert_status():
         "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7"
     }
     
-    logging.info("🚀 Моніторинг Нептуна запущено (режим дебагу).")
+    logging.info("🚀 Моніторинг Нептуна запущено (точний відбій).")
 
     async with ClientSession() as session:
         while True:
@@ -52,19 +52,17 @@ async def check_alert_status():
                 async with session.get(url, headers=headers, timeout=15) as response:
                     if response.status == 200:
                         raw_text = await response.text()
-                        
-                        # Виводимо шматок HTML у логи, щоб побачити, що повертає сайт
-                        logging.info(f"📄 HTML шматок з сайту: {raw_text[:350]}...")
-                        
                         text_lower = raw_text.lower()
-                        has_nizhyn = "ніжин" in text_lower
-                        has_alarm = "тривога" in text_lower or "небезпека" in text_lower
-                        has_clear = "відбій" in text_lower or "скасовано" in text_lower
                         
-                        if has_alarm:
-                            current_status = "active"
-                        else:
+                        # Перевіряємо ключові слова для відбою та тривоги
+                        has_clear = "відбій" in text_lower or "немає" in text_lower or "спокійно" in text_lower
+                        has_alarm_word = "тривога" in text_lower or "небезпека" in text_lower
+                        
+                        # Якщо є слово відбій або немає слова тривога — це точно клір
+                        if has_clear or not has_alarm_word:
                             current_status = "clear"
+                        else:
+                            current_status = "active"
                             
                         logging.info(f"🔎 Статус району: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
                         
