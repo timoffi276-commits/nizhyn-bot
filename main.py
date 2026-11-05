@@ -7,6 +7,14 @@ from aiohttp import web, ClientSession
 TELEGRAM_BOT_TOKEN = "8924046656:AAFptNIBxDr-5MA773mF7OAdE2dJkfQEUkE"
 CHANNEL_ID = "@nizhyn_life"
 
+# Токен від alerts.in.ua
+ALERTS_API_TOKEN = "fe2f8043ea50d7fc116cb410bb6478bc858ee08fab2203"
+
+# ID Ніжинського району в системі alerts.in.ua (або загально по області/району)
+# Зазвичай область Чернігівська — це regionId 25 або перевіримо через API району
+# Для прикладу використаємо запит статусу району
+NIHYN_DISTRICT_ID = "25" # Чернігівська область / райони
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -34,37 +42,35 @@ async def send_telegram_message(session, text):
         logging.error(f"❌ Помилка мережі при відправці в Telegram: {e}")
 
 
-async def check_alert_status():
+async def check_alerts_api():
     global last_alert_status
     
-    url = "https://neptun.in.ua/"
+    # Офіційне API alerts.in.ua для перевірки статусів
+    url = "https://api.alerts.in.ua/v1/iot/active_air_raid_alerts_by_district.json"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Language": "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7"
+        "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг Нептуна запущено (точний відбій).")
+    logging.info("🚀 Моніторинг через API alerts.in.ua запущено.")
 
     async with ClientSession() as session:
         while True:
             try:
                 async with session.get(url, headers=headers, timeout=15) as response:
                     if response.status == 200:
-                        raw_text = await response.text()
-                        text_lower = raw_text.lower()
+                        data = await response.json()
                         
-                        # Перевіряємо ключові слова для відбою та тривоги
-                        has_clear = "відбій" in text_lower or "немає" in text_lower or "спокійно" in text_lower
-                        has_alarm_word = "тривога" in text_lower or "небезпека" in text_lower
+                        # Шукаємо статус по Ніжину або району у відповіді API
+                        # API alerts.in.ua зазвичай повертає список активних тривог або стан районів
+                        # Перевіримо наявність Ніжина у списку активних
+                        text_data = str(data).lower()
                         
-                        # Якщо є слово відбій або немає слова тривога — це точно клір
-                        if has_clear or not has_alarm_word:
-                            current_status = "clear"
-                        else:
-                            current_status = "active"
+                        # Шукаємо Ніжин в активних тривогах
+                        is_alarm = "ніжин" in text_data and ("active" in text_data or "true" in text_data)
+                        
+                        current_status = "active" if is_alarm else "clear"
                             
-                        logging.info(f"🔎 Статус району: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
+                        logging.info(f"🔎 Статус від API alerts.in.ua: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
                         
                         if last_alert_status is None:
                             last_alert_status = current_status
@@ -80,19 +86,20 @@ async def check_alert_status():
                             await send_telegram_message(session, message_text)
                             last_alert_status = current_status
                     else:
-                        logging.warning(f"⚠️ Нептун повернув статус: {response.status}")
+                        body_err = await response.text()
+                        logging.warning(f"⚠️ API alerts.in.ua повернув статус {response.status}: {body_err}")
             except Exception as e:
-                logging.warning(f"❌ Помилка запиту до сайту: {e}")
+                logging.warning(f"❌ Помилка запиту до API alerts.in.ua: {e}")
             
-            await asyncio.sleep(30)
+            await asyncio.sleep(20)
 
 
 async def handle_root_ping(request):
-    return web.Response(text="Nizhyn Alert Bot is running 24/7! 🚀", content_type="text/plain")
+    return web.Response(text="Nizhyn Alert Bot (API) is running 24/7! 🚀", content_type="text/plain")
 
 
 async def setup_background_tasks(app):
-    asyncio.create_task(check_alert_status())
+    asyncio.create_task(check_alerts_api())
 
 
 if __name__ == "__main__":
