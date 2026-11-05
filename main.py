@@ -46,6 +46,9 @@ async def check_alerts_api():
     logging.info("🚀 Моніторинг Ніжина через API запущено у фоновому режимі.")
 
     async with ClientSession() as session:
+        # Надсилаємо тестове сповіщення одразу при запуску бота, щоб перевірити зв'язок з каналом
+        await send_telegram_message(session, "🤖 **Бот моніторингу тривог успішно запущено і працює 24/7!**")
+
         while True:
             try:
                 async with session.get(url, headers=headers, timeout=15) as response:
@@ -110,4 +113,4 @@ def init_app():
 if __name__ == "__main__":
     app = init_app()
     port = int(os.environ.get("PORT", 10000))
-    web.run_app(app, host="0.0.0.0", port=port)
+    web.run_app(app, host="0.0.0.0", port=port
