@@ -43,7 +43,7 @@ async def check_alerts_api():
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг через API alerts.in.ua запущено (з дебагом відповіді).")
+    logging.info("🚀 Точний моніторинг через API alerts.in.ua запущено.")
 
     async with ClientSession() as session:
         while True:
@@ -51,16 +51,21 @@ async def check_alerts_api():
                 async with session.get(url, headers=headers, timeout=15) as response:
                     if response.status == 200:
                         data = await response.json()
-                        text_data = str(data).lower()
+                        alerts_list = data.get("alerts", [])
                         
-                        # ВИВОДИМО В ЛОГИ ТЕ, ЩО ПРИХОДИТЬ ВІД API (перші 400 символів)
-                        logging.info(f"📦 Дані від API: {str(data)[:400]}...")
+                        # Шукаємо, чи є в активних тривогах Ніжин або Чернігівська область
+                        is_alarm = False
+                        for alert in alerts_list:
+                            title = alert.get("location_title", "").lower()
+                            oblast = alert.get("location_oblast", "").lower()
+                            
+                            if "ніжин" in title or "чернігів" in oblast or "чернігів" in title:
+                                is_alarm = True
+                                break
                         
-                        # Шукаємо і «ніжин», і «чернігівськ» (на випадок поточної тривоги по району/області)
-                        is_alarm = "ніжин" in text_data or "чернігів" in text_data
                         current_status = "active" if is_alarm else "clear"
                             
-                        logging.info(f"🔎 Статус від API: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
+                        logging.info(f"🔎 Статус району: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
                         
                         if last_alert_status is None:
                             last_alert_status = current_status
@@ -81,11 +86,11 @@ async def check_alerts_api():
             except Exception as e:
                 logging.warning(f"❌ Помилка запиту до API alerts.in.ua: {e}")
             
-            await asyncio.sleep(20)
+            await asyncio.sleep(15)
 
 
 async def handle_root_ping(request):
-    return web.Response(text="Nizhyn Alert Bot (API) is running 24/7! 🚀", content_type="text/plain")
+    return web.Response(text="Nizhyn Alert Bot is running 24/7! 🚀", content_type="text/plain")
 
 
 async def setup_background_tasks(app):
