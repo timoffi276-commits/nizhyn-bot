@@ -38,13 +38,12 @@ async def send_telegram_message(session, text):
 async def check_alerts_api():
     global last_alert_status
     
-    # Виправляємо URL на офіційний ендпоінт alerts.in.ua
     url = "https://api.alerts.in.ua/v1/alerts/active.json"
     headers = {
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг через API alerts.in.ua запущено (виправлений URL).")
+    logging.info("🚀 Моніторинг через API alerts.in.ua запущено (з дебагом відповіді).")
 
     async with ClientSession() as session:
         while True:
@@ -54,11 +53,14 @@ async def check_alerts_api():
                         data = await response.json()
                         text_data = str(data).lower()
                         
-                        # Шукаємо Ніжин у відповіді API
-                        is_alarm = "ніжин" in text_data
+                        # ВИВОДИМО В ЛОГИ ТЕ, ЩО ПРИХОДИТЬ ВІД API (перші 400 символів)
+                        logging.info(f"📦 Дані від API: {str(data)[:400]}...")
+                        
+                        # Шукаємо і «ніжин», і «чернігівськ» (на випадок поточної тривоги по району/області)
+                        is_alarm = "ніжин" in text_data or "чернігів" in text_data
                         current_status = "active" if is_alarm else "clear"
                             
-                        logging.info(f"🔎 Статус від API alerts.in.ua: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
+                        logging.info(f"🔎 Статус від API: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
                         
                         if last_alert_status is None:
                             last_alert_status = current_status
