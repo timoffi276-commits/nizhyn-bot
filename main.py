@@ -73,9 +73,9 @@ async def check_alerts_api():
                         
                         elif current_status != last_alert_status:
                             message_text = (
-                                "🔴 **УВАГА! Повітряна тривога в Ніжині та районі!** Пройдіть в укриття!"
+                                "🔴 **УВАГА! Повітряна тривога в Ніжинському районі!** Пройдіть в укриття!"
                                 if current_status == "active"
-                                else "🟢 **Відбій повітряної тривоги в Ніжині та районі.** Загроза минула."
+                                else "🟢 **Відбій повітряної тривоги в Ніжинському районі.**Загроза минула."
                             )
                             logging.info(f"⚡ ЗМІНА СТАТУСУ! Надсилаємо в {CHANNEL_ID}...")
                             await send_telegram_message(session, message_text)
