@@ -63,7 +63,8 @@ async def check_alerts_api():
                                 alert_type = alert.get("alert_type", "").lower()
                                 note = alert.get("note", "").lower()
                                 
-                                if "ракет" in note or "балістик" in note or "missile" in alert_type:
+                                # Більш точне розпізнавання ракетної небезпеки
+                                if "ракет" in note or "балістик" in note or "швидкісн" in note or "ціл" in note or "missile" in alert_type or "air_alert" in alert_type:
                                     nizhyn_alert_type = "missile"
                                 else:
                                     nizhyn_alert_type = "uav"
@@ -75,12 +76,11 @@ async def check_alerts_api():
                             last_alert_type = nizhyn_alert_type
                             logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
                         
-                        # Якщо статус змінився (навіть з uav на missile, або навпаки)
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
-                                message_text = "🟡 **УВАГА! Ніжинський район жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
+                                message_text = "🟡 **УВАГА! Ніжинський район-жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
                             elif nizhyn_alert_type == "missile":
-                                message_text = "🔴 **УВАГА! Ніжинський район червоний рівень небезпеки** 🚨 Пройдіть в укриття!"
+                                message_text = "🔴 **УВАГА! Ніжинський район-червоний рівень небезпеки** 🚨 Пройдіть в укриття!"
                             else:
                                 message_text = "🟢 **Відбій повітряної тривоги в Ніжинському районі.**"
                             
