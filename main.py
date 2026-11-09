@@ -14,7 +14,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-last_alert_status = None
+last_alert_type = None
 
 
 async def send_telegram_message(session, text):
@@ -36,18 +36,17 @@ async def send_telegram_message(session, text):
 
 
 async def check_alerts_api():
-    global last_alert_status
+    global last_alert_type
     
     url = "https://api.alerts.in.ua/v1/alerts/active.json"
     headers = {
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг Ніжина через API запущено у фоновому режимі.")
+    logging.info("🚀 Моніторинг Ніжина за типами загрози запущено у фоновому режимі.")
 
     async with ClientSession() as session:
-        # Тестове повідомлення при запуску нового бота
-        await send_telegram_message(session, "🤖 **Бот моніторингу тривог успішно запущено і працює 24/7!**")
+        await send_telegram_message(session, "🤖 **Бот моніторингу загрози БПЛА та ракет успішно запущено!**")
 
         while True:
             try:
@@ -56,30 +55,36 @@ async def check_alerts_api():
                         data = await response.json()
                         alerts_list = data.get("alerts", [])
                         
-                        is_alarm = False
+                        nizhyn_alert_type = "clear"
+                        
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             if "ніжин" in title:
-                                is_alarm = True
+                                alert_type = alert.get("alert_type", "")
+                                # Визначаємо тип загрози
+                                if "uav" in alert_type.lower() or "дрон" in alert.get("note", "").lower():
+                                    nizhyn_alert_type = "uav"  # БПЛА (жовтий)
+                                else:
+                                    nizhyn_alert_type = "missile"  # Ракетна / загальна тривога (червоний)
                                 break
                         
-                        current_status = "active" if is_alarm else "clear"
+                        logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
+                        
+                        if last_alert_type is None:
+                            last_alert_type = nizhyn_alert_type
+                            logging.info(f"📌 Початковий статус збережено: {nizhyn_alert_type}")
+                        
+                        elif nizhyn_alert_type != last_alert_type:
+                            if nizhyn_alert_type == "uav":
+                                message_text = "🟡 **УВАГА! Загроза застосування БПЛА (шахедів) у Ніжині та районі!** ⚠️"
+                            elif nizhyn_alert_type == "missile":
+                                message_text = "🔴 **УВАГА! Ракетна небезпека / Повітряна тривога в Ніжині!** 🚨 Пройдіть в укриття!"
+                            else:
+                                message_text = "🟢 **Відбій повітряної тривоги в Ніжині та районі.** ✅ Загроза минула."
                             
-                        logging.info(f"🔎 Статус Ніжина: [{current_status.upper()}] (Попередній: [{last_alert_status}])")
-                        
-                        if last_alert_status is None:
-                            last_alert_status = current_status
-                            logging.info(f"📌 Початковий статус збережено: {current_status}")
-                        
-                        elif current_status != last_alert_status:
-                            message_text = (
-                                "🔴 **УВАГА! Повітряна тривога в Ніжинському районі!** Пройдіть в укриття!"
-                                if current_status == "active"
-                                else "🟢 **Відбій повітряної тривоги в Ніжинському районі.**Загроза минула."
-                            )
                             logging.info(f"⚡ ЗМІНА СТАТУСУ! Надсилаємо в {CHANNEL_ID}...")
                             await send_telegram_message(session, message_text)
-                            last_alert_status = current_status
+                            last_alert_type = nizhyn_alert_type
                     else:
                         body_err = await response.text()
                         logging.warning(f"⚠️ API alerts.in.ua повернув статус {response.status}: {body_err}")
