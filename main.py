@@ -56,29 +56,31 @@ async def check_alerts_api():
                         alerts_list = data.get("alerts", [])
                         
                         nizhyn_alert_type = "clear"
+                        found_nizhyn = False
                         
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             if "ніжин" in title:
+                                found_nizhyn = True
                                 alert_type = alert.get("alert_type", "").lower()
                                 note = alert.get("note", "").lower()
                                 
                                 logging.info(f"🚨 ДЕТАЛІ API -> alert_type: [{alert_type}] | note: [{note}]")
                                 
-                                # 1. Спочатку перевіряємо на ракетну загрозу (червоний)
+                                # Якщо є чіткі слова про ракетну загрозу — лише тоді червоний
                                 if "ракет" in note or "балістик" in note or "швидкісн" in note or "ціл" in note or "missile" in alert_type:
                                     nizhyn_alert_type = "missile"
-                                # 2. Якщо є слова про БПЛА/дрон — це жовтий
-                                elif "бпла" in note or "дрон" in note or "безпілотник" in note or "uav" in alert_type or "громадськ" in note:
-                                    nizhyn_alert_type = "uav"
-                                # 3. Якщо просто загальна тривога без уточнень — за замовчуванням хай буде червоний (або жовтий залежно від ситуації)
                                 else:
-                                    nizhyn_alert_type = "missile"
+                                    # Усі інші тривоги (включно з повітряною без уточнень чи БПЛА) вважаємо жовтим рівнем
+                                    nizhyn_alert_type = "uav"
                                 break
+                        
+                        if not found_nizhyn:
+                            nizhyn_alert_type = "clear"
                         
                         logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
                         
-                        # Ініціалізація при старті (щоб не спамити під час перезапуску)
+                        # Ініціалізація при старті
                         if last_alert_type is None:
                             last_alert_type = nizhyn_alert_type
                             logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
