@@ -78,11 +78,11 @@ async def check_alerts_api():
                         
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
-                                message_text = "🟡 **УВАГА! Загроза застосування БПЛА (шахедів) у Ніжині та районі!** ⚠️"
+                                message_text = "🟡 **УВАГА! Ніжинський район жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
                             elif nizhyn_alert_type == "missile":
-                                message_text = "🔴 **УВАГА! Ракетна небезпека / Повітряна тривога в Ніжині!** 🚨 Пройдіть в укриття!"
+                                message_text = "🔴 **УВАГА! Ніжинський район червоний рівень , ракетна небезпека !** 🚨 Пройдіть в укриття!"
                             else:
-                                message_text = "🟢 **Відбій повітряної тривоги в Ніжині та районі.** ✅ Загроза минула."
+                                message_text = "🟢 **Відбій повітряної тривоги в Ніжинському районі.**"
                             
                             logging.info(f"⚡ ЗМІНА СТАТУСУ! Надсилаємо в {CHANNEL_ID}...")
                             await send_telegram_message(session, message_text)
