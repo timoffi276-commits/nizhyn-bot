@@ -68,11 +68,12 @@ async def check_alerts_api():
                                 alert_type_l = alert_type.lower()
                                 note_l = note.lower()
                                 
-                                # Чітке розпізнавання червоного (ракетного) рівня
-                                if "ракет" in note_l or "балістик" in note_l or "швидкісн" in note_l or "ціл" in note_l or "missile" in alert_type_l or "air_alert" in alert_type_l:
-                                    nizhyn_alert_type = "missile"
-                                else:
+                                # Якщо в нотатці є слова про БПЛА/дрон — це жовтий (uav)
+                                if "бпла" in note_l or "дрон" in note_l or "безпілотник" in note_l:
                                     nizhyn_alert_type = "uav"
+                                # Якщо це air_raid або є слова про ракети/балістику — це червоний (missile)
+                                else:
+                                    nizhyn_alert_type = "missile"
                                 break
                         
                         logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
