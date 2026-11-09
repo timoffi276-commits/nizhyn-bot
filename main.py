@@ -60,30 +60,30 @@ async def check_alerts_api():
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             if "ніжин" in title:
-                                alert_type = alert.get("alert_type", "")
-                                note = alert.get("note", "")
+                                alert_type = alert.get("alert_type", "").lower()
+                                note = alert.get("note", "").lower()
                                 
                                 logging.info(f"🚨 ДЕТАЛІ API -> alert_type: [{alert_type}] | note: [{note}]")
                                 
-                                alert_type_l = alert_type.lower()
-                                note_l = note.lower()
-                                
-                                # Якщо в нотатці є слова про БПЛА/дрон — це жовтий (uav)
-                                if "бпла" in note_l or "дрон" in note_l or "безпілотник" in note_l:
+                                # 1. Спочатку перевіряємо на ракетну загрозу (червоний)
+                                if "ракет" in note or "балістик" in note or "швидкісн" in note or "ціл" in note or "missile" in alert_type:
+                                    nizhyn_alert_type = "missile"
+                                # 2. Якщо є слова про БПЛА/дрон — це жовтий
+                                elif "бпла" in note or "дрон" in note or "безпілотник" in note or "uav" in alert_type or "громадськ" in note:
                                     nizhyn_alert_type = "uav"
-                                # Якщо це air_raid або є слова про ракети/балістику — це червоний (missile)
+                                # 3. Якщо просто загальна тривога без уточнень — за замовчуванням хай буде червоний (або жовтий залежно від ситуації)
                                 else:
                                     nizhyn_alert_type = "missile"
                                 break
                         
                         logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
                         
-                        # Ініціалізація при старті
+                        # Ініціалізація при старті (щоб не спамити під час перезапуску)
                         if last_alert_type is None:
                             last_alert_type = nizhyn_alert_type
                             logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
                         
-                        # Зміна статусу
+                        # Зміна статусу — надсилаємо в канал
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
                                 message_text = "🟡 **УВАГА! Ніжинський район-жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
