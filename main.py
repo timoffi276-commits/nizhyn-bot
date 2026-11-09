@@ -60,12 +60,14 @@ async def check_alerts_api():
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             if "ніжин" in title:
-                                alert_type = alert.get("alert_type", "")
-                                # Визначаємо тип загрози
-                                if "uav" in alert_type.lower() or "дрон" in alert.get("note", "").lower():
-                                    nizhyn_alert_type = "uav"  # БПЛА (жовтий)
+                                alert_type = alert.get("alert_type", "").lower()
+                                note = alert.get("note", "").lower()
+                                
+                                # Розрізняємо БПЛА (жовтий) від ракет (червоний)
+                                if "uav" in alert_type or "дрон" in note or "шахед" in note or "беспілотн" in note:
+                                    nizhyn_alert_type = "uav"
                                 else:
-                                    nizhyn_alert_type = "missile"  # Ракетна / загальна тривога (червоний)
+                                    nizhyn_alert_type = "missile"
                                 break
                         
                         logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
