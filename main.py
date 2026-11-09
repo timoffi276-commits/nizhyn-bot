@@ -43,7 +43,7 @@ async def check_alerts_api():
         "Authorization": f"Bearer {ALERTS_API_TOKEN}"
     }
     
-    logging.info("🚀 Моніторинг Ніжина за типами загрози запущено у фоновому режимі.")
+    logging.info("🚀 Моніторинг Ніжина запущено у фоновому режимі.")
 
     async with ClientSession() as session:
         await send_telegram_message(session, "🤖 **Бот моніторингу загрози БПЛА та ракет успішно запущено!**")
@@ -60,11 +60,16 @@ async def check_alerts_api():
                         for alert in alerts_list:
                             title = alert.get("location_title", "").lower()
                             if "ніжин" in title:
-                                alert_type = alert.get("alert_type", "").lower()
-                                note = alert.get("note", "").lower()
+                                alert_type = alert.get("alert_type", "")
+                                note = alert.get("note", "")
                                 
-                                # Більш точне розпізнавання ракетної небезпеки
-                                if "ракет" in note or "балістик" in note or "швидкісн" in note or "ціл" in note or "missile" in alert_type or "air_alert" in alert_type:
+                                logging.info(f"🚨 ДЕТАЛІ API -> alert_type: [{alert_type}] | note: [{note}]")
+                                
+                                alert_type_l = alert_type.lower()
+                                note_l = note.lower()
+                                
+                                # Чітке розпізнавання червоного (ракетного) рівня
+                                if "ракет" in note_l or "балістик" in note_l or "швидкісн" in note_l or "ціл" in note_l or "missile" in alert_type_l or "air_alert" in alert_type_l:
                                     nizhyn_alert_type = "missile"
                                 else:
                                     nizhyn_alert_type = "uav"
@@ -72,10 +77,12 @@ async def check_alerts_api():
                         
                         logging.info(f"🔎 Статус Ніжина: [{nizhyn_alert_type.upper()}] (Попередній: [{last_alert_type}])")
                         
+                        # Ініціалізація при старті
                         if last_alert_type is None:
                             last_alert_type = nizhyn_alert_type
                             logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
                         
+                        # Зміна статусу
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
                                 message_text = "🟡 **УВАГА! Ніжинський район-жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
