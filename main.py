@@ -46,7 +46,6 @@ async def check_alerts_api():
     logging.info("🚀 Моніторинг Ніжина за типами загрози запущено у фоновому режимі.")
 
     async with ClientSession() as session:
-        # Повідомлення про запуск бота
         await send_telegram_message(session, "🤖 **Бот моніторингу загрози БПЛА та ракет успішно запущено!**")
 
         while True:
@@ -76,6 +75,7 @@ async def check_alerts_api():
                             last_alert_type = nizhyn_alert_type
                             logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
                         
+                        # Якщо статус змінився (навіть з uav на missile, або навпаки)
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
                                 message_text = "🟡 **УВАГА! Ніжинський район жовтий рівень небезпеки!** Пройдіть в укриття!⚠️"
@@ -84,7 +84,7 @@ async def check_alerts_api():
                             else:
                                 message_text = "🟢 **Відбій повітряної тривоги в Ніжинському районі.**"
                             
-                            logging.info(f"⚡ ЗМІНА СТАТУСУ! Надсилаємо в {CHANNEL_ID}...")
+                            logging.info(f"⚡ ЗМІНА СТАТУСУ ({last_alert_type} -> {nizhyn_alert_type})! Надсилаємо в {CHANNEL_ID}...")
                             await send_telegram_message(session, message_text)
                             last_alert_type = nizhyn_alert_type
                     else:
