@@ -46,6 +46,7 @@ async def check_alerts_api():
     logging.info("🚀 Моніторинг Ніжина за типами загрози запущено у фоновому режимі.")
 
     async with ClientSession() as session:
+        # Повідомлення про запуск бота
         await send_telegram_message(session, "🤖 **Бот моніторингу загрози БПЛА та ракет успішно запущено!**")
 
         while True:
@@ -63,7 +64,6 @@ async def check_alerts_api():
                                 alert_type = alert.get("alert_type", "").lower()
                                 note = alert.get("note", "").lower()
                                 
-                                # Якщо в нотатках чи типів чітко є ракета/балістика — тоді червоний, інакше жовтий (БПЛА)
                                 if "ракет" in note or "балістик" in note or "missile" in alert_type:
                                     nizhyn_alert_type = "missile"
                                 else:
@@ -74,7 +74,7 @@ async def check_alerts_api():
                         
                         if last_alert_type is None:
                             last_alert_type = nizhyn_alert_type
-                            logging.info(f"📌 Початковий статус збережено: {nizhyn_alert_type}")
+                            logging.info(f"📌 Початковий статус ініціалізовано: {nizhyn_alert_type}")
                         
                         elif nizhyn_alert_type != last_alert_type:
                             if nizhyn_alert_type == "uav":
