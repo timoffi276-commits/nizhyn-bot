@@ -64,15 +64,16 @@ async def check_alerts_api():
                                 found_nizhyn = True
                                 alert_type = alert.get("alert_type", "").lower()
                                 note = alert.get("note", "").lower()
+                                color = alert.get("color", "").lower()
                                 
-                                logging.info(f"🚨 ДЕТАЛІ API -> alert_type: [{alert_type}] | note: [{note}]")
+                                logging.info(f"🚨 ДЕТАЛІ API -> color: [{color}] | alert_type: [{alert_type}] | note: [{note}]")
                                 
-                                # Якщо є слова про БПЛА, дрон або безпілотник — це жовтий рівень (uav)
-                                if "бпла" in note or "дрон" in note or "безпілотник" in note or "uav" in alert_type:
-                                    nizhyn_alert_type = "uav"
-                                # Якщо є слова про ракетну загрозу або це звичайний air_raid — це червоний (missile)
-                                else:
+                                # Залізобетонна перевірка на ракети, балістику та червоний колір
+                                if "ракет" in note or "балістик" in note or "швидкісн" in note or "ціл" in note or "кинджал" in note or "іскандер" in note or "missile" in alert_type or color == "red" or color == "червоний":
                                     nizhyn_alert_type = "missile"
+                                else:
+                                    # Усе інше (БПЛА, загальна тривога без ракет) йде як жовтий рівень
+                                    nizhyn_alert_type = "uav"
                                 break
                         
                         if not found_nizhyn:
